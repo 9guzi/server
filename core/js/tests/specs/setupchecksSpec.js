@@ -538,7 +538,10 @@ describe('OC.SetupChecks tests', function() {
 				}, {
 					msg: 'The "X-Permitted-Cross-Domain-Policies" HTTP header is not set to "none". This is a potential security or privacy risk, as it is recommended to adjust this setting accordingly.',
 					type: OC.SetupChecks.MESSAGE_TYPE_WARNING
-				},
+				}, {
+					msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation</a>.',
+					type: OC.SetupChecks.MESSAGE_TYPE_INFO
+				}
 				]);
 				done();
 			});
@@ -556,6 +559,7 @@ describe('OC.SetupChecks tests', function() {
 					'Strict-Transport-Security': 'max-age=15768000;preload',
 					'X-Download-Options': 'noopen',
 					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
 				}
 			);
 
@@ -585,12 +589,203 @@ describe('OC.SetupChecks tests', function() {
 					'Strict-Transport-Security': 'max-age=15768000',
 					'X-Download-Options': 'noopen',
 					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer'
 				}
 			);
 
 			async.done(function( data, s, x ){
 				expect(data).toEqual([]);
 				done();
+			});
+		});
+
+		describe('check Referrer-Policy header', function() {
+			it('should return no message if Reffere-Policy is set to no-referrer', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return no message if Reffere-Policy is set to no-referrer-when-downgrade', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'no-referrer-when-downgrade',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return no message if Reffere-Policy is set to strict-origin', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'strict-origin',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return no message if Reffere-Policy is set to strict-origin-when-cross-origin', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'strict-origin-when-cross-origin',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([]);
+					done();
+				});
+			});
+
+			it('should return a message if Reffere-Policy is set to same-origin', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'same-origin',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation</a>.',
+							type: OC.SetupChecks.MESSAGE_TYPE_INFO
+						}
+					]);
+					done();
+				});
+			});
+
+			it('should return a message if Reffere-Policy is set to origin', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'origin',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation</a>.',
+							type: OC.SetupChecks.MESSAGE_TYPE_INFO
+						}
+					]);
+					done();
+				});
+			});
+
+			it('should return a message if Reffere-Policy is set to origin-when-cross-origin', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'origin-when-cross-origin',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation</a>.',
+							type: OC.SetupChecks.MESSAGE_TYPE_INFO
+						}
+					]);
+					done();
+				});
+			});
+
+			it('should return a message if Reffere-Policy is set to unsafe-url', function(done) {
+				protocolStub.returns('https');
+				var async = OC.SetupChecks.checkGeneric();
+
+				suite.server.requests[0].respond(200, {
+					'Strict-Transport-Security': 'max-age=15768000',
+					'X-XSS-Protection': '1; mode=block',
+					'X-Content-Type-Options': 'nosniff',
+					'X-Robots-Tag': 'none',
+					'X-Frame-Options': 'SAMEORIGIN',
+					'X-Download-Options': 'noopen',
+					'X-Permitted-Cross-Domain-Policies': 'none',
+					'Referrer-Policy': 'unsafe-url',
+				});
+
+				async.done(function( data, s, x ){
+					expect(data).toEqual([
+						{
+							msg: 'The "Referrer-Policy" HTTP header is not set to "no-referrer", "no-referrer-when-downgrade", "strict-origin" or "strict-origin-when-cross-origin". This can leak referer information. See the <a href="https://www.w3.org/TR/referrer-policy/" rel="noreferrer noopener">W3C Recommendation</a>.',
+							type: OC.SetupChecks.MESSAGE_TYPE_INFO
+						}
+					]);
+					done();
+				});
 			});
 		});
 	});
@@ -607,6 +802,7 @@ describe('OC.SetupChecks tests', function() {
 				'X-Frame-Options': 'SAMEORIGIN',
 				'X-Download-Options': 'noopen',
 				'X-Permitted-Cross-Domain-Policies': 'none',
+				'Referrer-Policy': 'no-referrer',
 			}
 		);
 
@@ -653,6 +849,7 @@ describe('OC.SetupChecks tests', function() {
 				'X-Frame-Options': 'SAMEORIGIN',
 				'X-Download-Options': 'noopen',
 				'X-Permitted-Cross-Domain-Policies': 'none',
+				'Referrer-Policy': 'no-referrer',
 			}
 		);
 
@@ -678,6 +875,7 @@ describe('OC.SetupChecks tests', function() {
 				'X-Frame-Options': 'SAMEORIGIN',
 				'X-Download-Options': 'noopen',
 				'X-Permitted-Cross-Domain-Policies': 'none',
+				'Referrer-Policy': 'no-referrer',
 			}
 		);
 
@@ -703,6 +901,7 @@ describe('OC.SetupChecks tests', function() {
 				'X-Frame-Options': 'SAMEORIGIN',
 				'X-Download-Options': 'noopen',
 				'X-Permitted-Cross-Domain-Policies': 'none',
+				'Referrer-Policy': 'no-referrer',
 			}
 		);
 
@@ -727,6 +926,7 @@ describe('OC.SetupChecks tests', function() {
 			'X-Frame-Options': 'SAMEORIGIN',
 			'X-Download-Options': 'noopen',
 			'X-Permitted-Cross-Domain-Policies': 'none',
+			'Referrer-Policy': 'no-referrer',
 		});
 
 		async.done(function( data, s, x ){
@@ -747,6 +947,7 @@ describe('OC.SetupChecks tests', function() {
 			'X-Frame-Options': 'SAMEORIGIN',
 			'X-Download-Options': 'noopen',
 			'X-Permitted-Cross-Domain-Policies': 'none',
+			'Referrer-Policy': 'no-referrer',
 		});
 
 		async.done(function( data, s, x ){
@@ -767,6 +968,7 @@ describe('OC.SetupChecks tests', function() {
 			'X-Frame-Options': 'SAMEORIGIN',
 			'X-Download-Options': 'noopen',
 			'X-Permitted-Cross-Domain-Policies': 'none',
+			'Referrer-Policy': 'no-referrer',
 		});
 
 		async.done(function( data, s, x ){
@@ -787,6 +989,7 @@ describe('OC.SetupChecks tests', function() {
 			'X-Frame-Options': 'SAMEORIGIN',
 			'X-Download-Options': 'noopen',
 			'X-Permitted-Cross-Domain-Policies': 'none',
+			'Referrer-Policy': 'no-referrer',
 		});
 
 		async.done(function( data, s, x ){
